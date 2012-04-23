@@ -32,6 +32,7 @@ class AddonController extends AddonsController {
          $this->AddJsFile('jquery.gardenhandleajaxform.js');
          $this->AddJsFile('global.js');
       }
+      $this->CountCommentsPerPage = 30;
    }
 
    /**
@@ -105,6 +106,7 @@ class AddonController extends AddonsController {
          try {
             // Validate the upload
             $TmpFile = $Upload->ValidateUpload('File');
+            Trace($TmpFile, 'TmpFile');
             $Extension = pathinfo($Upload->GetUploadedFileName(), PATHINFO_EXTENSION);
 
             // Generate the target file name
@@ -112,14 +114,18 @@ class AddonController extends AddonsController {
             $FileBaseName = pathinfo($TargetFile, PATHINFO_BASENAME);
 
             // Save the uploaded file
-            $Upload->SaveAs(
+            $Parsed = $Upload->SaveAs(
                $TmpFile,
                $TargetFile
             );
-            $Path = $Upload->CopyLocal($TargetFile);
+            Trace($Parsed, 'Parsed');
+            $Path = $Upload->CopyLocal($Parsed['SaveName']);
+            Trace($Path, 'Local Copy');
+//            $this->Render();
+//            return;
             $this->Form->SetFormValue('Path', $Path);
          } catch (Exception $ex) {
-            $this->Form->AddError($ex->getMessage());
+            $this->Form->AddError($ex);
          }
 
          // If there were no errors, save the addon
@@ -365,11 +371,11 @@ class AddonController extends AddonsController {
             $FileBaseName = pathinfo($TargetFile, PATHINFO_BASENAME);
             
             // Save the uploaded file
-            $Upload->SaveAs(
+            $Parsed = $Upload->SaveAs(
                $TmpFile,
                $TargetFile
             );
-            $Path = $Upload->CopyLocal($TargetFile);
+            $Path = $Upload->CopyLocal($Parsed['SaveName']);
             
             $this->Form->SetFormValue('Path', $Path);
 //				$this->Form->SetFormValue('TestedWith', 'Blank');
@@ -649,7 +655,7 @@ class AddonController extends AddonsController {
             $ImageBaseName = 'addons/screens/'.pathinfo($TargetImage, PATHINFO_BASENAME);
             
             // Save the uploaded image in large size
-            $UploadImage->SaveImageAs(
+            $ImgParsed = $UploadImage->SaveImageAs(
                $TmpImage,
                ChangeBaseName($ImageBaseName, 'ao%s'),
                700,
@@ -658,13 +664,13 @@ class AddonController extends AddonsController {
 
             // Save the uploaded image in thumbnail size
             $ThumbSize = 150;
-            $UploadImage->SaveImageAs(
+            $ThumbParsed = $UploadImage->SaveImageAs(
                $TmpImage,
                ChangeBasename($ImageBaseName, 'at%s'),
                $ThumbSize,
                $ThumbSize
             );
-            
+            $ImageBaseName = sprintf($ImgParsed['SaveFormat'], $ImageBaseName);
          } catch (Exception $ex) {
             $this->Form->AddError($ex->getMessage());
          }
@@ -735,14 +741,14 @@ class AddonController extends AddonsController {
             $ImageBaseName = pathinfo($TargetImage, PATHINFO_BASENAME);
             
             // Save the uploaded icon
-            $UploadImage->SaveImageAs(
+            $Parsed = $UploadImage->SaveImageAs(
                $TmpImage,
                $TargetImage,
                128,
                128,
                FALSE, FALSE
             );
-
+            $TargetImage = $Parsed['SaveName'];
          } catch (Exception $ex) {
             $this->Form->AddError($ex->getMessage());
          }

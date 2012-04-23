@@ -210,7 +210,6 @@ if ($this->DeliveryType() == DELIVERY_TYPE_ALL) {
 	}
 	?>
 	<h2 class="Questions" style="position:relative;">Questions</h2>
-<div style="clear: both"></div>
 	<?php if (is_object($this->DiscussionData) && $this->DiscussionData->NumRows() > 0) { ?>
 	<ul class="DataList Discussions">
 		<?php
