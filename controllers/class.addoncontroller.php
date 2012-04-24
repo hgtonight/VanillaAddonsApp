@@ -8,6 +8,11 @@ You should have received a copy of the GNU General Public License along with Gar
 Contact Vanilla Forums Inc. at support [at] vanillaforums [dot] com
 */
 
+if (!function_exists('Trace')) {
+   function Trace($A, $B) {
+   }
+}
+
 /**
  * MessagesController handles displaying lists of conversations and conversation messages.
  */
