@@ -7,7 +7,7 @@ if ($this->Addon['File'] == '') {
 ?></h1>
 <div class="Box DownloadInfo">
 	<strong>Your download should begin shortly</strong>
-	<p>If your download does not begin right away, <a href="<?php echo '/uploads/'.$this->Addon['File']; ?>">click here to download now</a>.</p>
+	<p>If your download does not begin right away, <a href="<?php echo Gdn_Upload::Url($this->Addon['File']); ?>">click here to download now</a>.</p>
 	
 	<strong>Need help installing this addon?</strong>
 	<p>There should be a readme file in the addon with more specific instructions on how to install it. If you are still having problems, <a href="http://vanillaforums.org/discussions">ask for help on the community forums</a>.</p>

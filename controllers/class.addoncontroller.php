@@ -16,7 +16,10 @@ class AddonController extends AddonsController {
 	public $Filter = 'all';
 	public $Sort = 'recent';
 	public $Version = '0'; // The version of Vanilla to filter to (0 is no filter)
-
+   /**
+    * @var Gdn_Form 
+    */
+   public $Form;
    /**
     * @var AddonModel
     */
@@ -369,26 +372,63 @@ class AddonController extends AddonsController {
             // Generate the target name
             $TargetFile = $Upload->GenerateTargetName('addons', $Extension);
             $FileBaseName = pathinfo($TargetFile, PATHINFO_BASENAME);
+            $TargetPath = PATH_UPLOADS.'/'.$TargetFile;
+            
+            if (!file_exists(dirname($TargetPath))) {
+               mkdir(dirname($TargetPath), 0777, TRUE);
+            }
+            
+            // Save the file to a temporary location for parsing...
+            if (!move_uploaded_file($TmpFile, $TargetPath)) {
+               throw new Exception("We couldn't save the file you uploaded. Please try again later.", 400);
+            }
+            
+            $AnalyzedAddon = UpdateModel::AnalyzeAddon($TargetPath, TRUE);
+//            decho($AnalyzedAddon);
+//            
+//            decho();
+//            die();
+            
+            // Set the filename for the CDN...
+            $Upload->EventArguments['OriginalFilename'] = AddonModel::Slug($AnalyzedAddon, TRUE).'.zip';
             
             // Save the uploaded file
             $Parsed = $Upload->SaveAs(
-               $TmpFile,
+               $TargetPath,
                $TargetFile
             );
-            $Path = $Upload->CopyLocal($Parsed['SaveName']);
+            $AnalyzedAddon['AddonID'] = $AddonID;
+            $AnalyzedAddon['File'] = $Parsed['SaveName'];
+            unset($AnalyzedAddon['Path']);
+//            $AnalyzedAddon['Description2'] = $this->Form->GetFormValue('Description2');
+            Trace($AnalyzedAddon, 'Analyzed Addon');
             
-            $this->Form->SetFormValue('Path', $Path);
+            
+            $this->Form->FormValues($AnalyzedAddon);
+//            $this->Form->SetFormValue('Path', $TargetPath);
 //				$this->Form->SetFormValue('TestedWith', 'Blank');
          } catch (Exception $ex) {
-            $this->Form->AddError($ex->getMessage());
+            $this->Form->AddError($ex);
+            
+            // Delete the erroneous file.
+            try {
+               $Upload->Delete($AnalyzedAddon['File']);
+            } catch(Exception $Ex2) {
+            }
+         }
+         
+         if (isset($TargetPath) && file_exists($TargetPath)) {
+            unlink($TargetPath);
          }
          
          // If there were no errors, save the addonversion
          if ($this->Form->ErrorCount() == 0) {
             $NewVersionID = $this->Form->Save($V1);
             if ($NewVersionID) {
-               $this->StatusMessage = T("New version saved successfully.");
-               $this->RedirectUrl = Url('/addon/'.AddonModel::Slug($Addon, FALSE));
+//               $this->StatusMessage = T("New version saved successfully.");
+//               $this->RedirectUrl =
+               $this->SetData('Addon', $AnalyzedAddon);
+               $this->SetData('Url', Url('/addon/'.AddonModel::Slug($Addon, TRUE), TRUE));
             } else {
                if (file_exists($Path))
                   unlink($Path);
@@ -750,7 +790,7 @@ class AddonController extends AddonsController {
             );
             $TargetImage = $Parsed['SaveName'];
          } catch (Exception $ex) {
-            $this->Form->AddError($ex->getMessage());
+            $this->Form->AddError($ex);
          }
          // If there were no errors, remove the old picture and insert the picture
          if ($this->Form->ErrorCount() == 0) {

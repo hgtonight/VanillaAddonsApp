@@ -371,6 +371,8 @@ class AddonModel extends Gdn_Model {
    }
 
    public function Save($Stub, $V1 = FALSE) {
+      Trace('AddonModel->Save()');
+      
       $Session = Gdn::Session();
 
       $this->DefineSchema();
@@ -378,6 +380,8 @@ class AddonModel extends Gdn_Model {
       // Most of the values come from the file itself.
       if (isset($Stub['Path'])) {
          $Path = $Stub['Path'];
+      } elseif (GetValue('Checked', $Stub)) {
+         $Addon = $Stub;
       } elseif (isset($Stub['File'])) {
          $Path = CombinePaths(array(PATH_UPLOADS, $Stub['File']));
       } else {
@@ -389,23 +393,25 @@ class AddonModel extends Gdn_Model {
       }
       
       // Analyze and fix the file.
-      if (isset($Path) && !$V1) {
-         try {
-            $Addon = UpdateModel::AnalyzeAddon($Path, FALSE);
-         } catch (Exception $Ex) {
-            $Addon = FALSE;
-            $this->Validation->AddValidationResult('File', '@'.$Ex->getMessage());
-         }
-         if (!is_array($Addon)) {
-            $this->Validation->AddValidationResult('File', 'Could not analyze the addon file.');
-            return FALSE;
-         }
-         $Addon = array_merge($Stub, $Addon);
-      } else {
-         $Addon = $Stub;
-         if (isset($Path)) {
-            $Addon['MD5'] = md5_file($Path);
-            $Addon['FileSize'] = filesize($Path);
+      if (!isset($Addon)) {
+         if (isset($Path) && !$V1) {
+            try {
+               $Addon = UpdateModel::AnalyzeAddon($Path, FALSE);
+            } catch (Exception $Ex) {
+               $Addon = FALSE;
+               $this->Validation->AddValidationResult('File', '@'.$Ex->getMessage());
+            }
+            if (!is_array($Addon)) {
+               $this->Validation->AddValidationResult('File', 'Could not analyze the addon file.');
+               return FALSE;
+            }
+            $Addon = array_merge($Stub, $Addon);
+         } else {
+            $Addon = $Stub;
+            if (isset($Path)) {
+               $Addon['MD5'] = md5_file($Path);
+               $Addon['FileSize'] = filesize($Path);
+            }
          }
       }
 
@@ -416,6 +422,8 @@ class AddonModel extends Gdn_Model {
          $CurrentAddon = $this->GetID(array($Addon['AddonKey'], $Addon['AddonTypeID']), TRUE);
       else
          $CurrentAddon = FALSE;
+      
+      Trace($CurrentAddon, 'CurentAddon');
 
       $Insert = !$CurrentAddon;
       if ($Insert)
@@ -424,6 +432,7 @@ class AddonModel extends Gdn_Model {
       $this->AddUpdateFields($Addon); // always add update fields
 
       if (!$this->Validate($Addon, $Insert)) {
+         Trace('Addon did not validate');
          return FALSE;
       }
 
@@ -471,24 +480,30 @@ class AddonModel extends Gdn_Model {
          $AddonID = GetValue('AddonID', $CurrentAddon);
 
          // Only save the addon if it is the current version.
-         if (!$MaxVersion || version_compare($Addon['Version'], $MaxVersion['Version'], '>='))
+         if (!$MaxVersion || version_compare($Addon['Version'], $MaxVersion['Version'], '>=')) {
+            Trace('Uploaded version is the most recent version.');
             $this->SQL->Put($this->Name, $Fields, array('AddonID' => $AddonID));
-         else
+         } else {
             $this->SQL->Reset();
+         }
       }
 
       // Save the version.
-      if ($AddonID && isset($Path)) {
+      if ($AddonID && isset($Path) || isset($Addon['File'])) {
+         Trace('Saving addon version');
          $Addon['AddonID'] = $AddonID;
-         if (!StringBeginsWith($Path, PATH_UPLOADS.'/addons/')) {
-            // The addon must be copied into the uploads folder.
-            $NewPath = PATH_UPLOADS.'/addons/'.basename($Path);
-            //rename($Path, $NewPath);
-            $Path = $NewPath;
-            $this->_AddonCache = array();
+         
+         if (isset($Path)) {
+            if (!StringBeginsWith($Path, PATH_UPLOADS.'/addons/')) {
+               // The addon must be copied into the uploads folder.
+               $NewPath = PATH_UPLOADS.'/addons/'.basename($Path);
+               //rename($Path, $NewPath);
+               $Path = $NewPath;
+               $this->_AddonCache = array();
+            }
+            $File = substr($Path, strlen(PATH_UPLOADS.'/'));
+            $Addon['File'] = $File;
          }
-         $File = substr($Path, strlen(PATH_UPLOADS.'/'));
-         $Addon['File'] = $File;
 
          if ($CurrentVersion) {
             $Addon['AddonVersionID'] = GetValue('AddonVersionID', $CurrentVersion);
