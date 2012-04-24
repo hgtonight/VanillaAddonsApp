@@ -114,26 +114,48 @@ class AddonController extends AddonsController {
          try {
             // Validate the upload
             $TmpFile = $Upload->ValidateUpload('File');
-            Trace($TmpFile, 'TmpFile');
             $Extension = pathinfo($Upload->GetUploadedFileName(), PATHINFO_EXTENSION);
-
-            // Generate the target file name
+            
+            // Generate the target name
             $TargetFile = $Upload->GenerateTargetName('addons', $Extension);
             $FileBaseName = pathinfo($TargetFile, PATHINFO_BASENAME);
-
+            $TargetPath = PATH_UPLOADS.'/'.$TargetFile;
+            
+            if (!file_exists(dirname($TargetPath))) {
+               mkdir(dirname($TargetPath), 0777, TRUE);
+            }
+            
+            // Save the file to a temporary location for parsing...
+            if (!move_uploaded_file($TmpFile, $TargetPath)) {
+               throw new Exception("We couldn't save the file you uploaded. Please try again later.", 400);
+            }
+            
+            $AnalyzedAddon = UpdateModel::AnalyzeAddon($TargetPath, TRUE);
+//            decho($AnalyzedAddon);
+//            
+//            decho();
+//            die();
+            
+            // Set the filename for the CDN...
+            $Upload->EventArguments['OriginalFilename'] = AddonModel::Slug($AnalyzedAddon, TRUE).'.zip';
+            
             // Save the uploaded file
             $Parsed = $Upload->SaveAs(
-               $TmpFile,
+               $TargetPath,
                $TargetFile
             );
-            Trace($Parsed, 'Parsed');
-            $Path = $Upload->CopyLocal($Parsed['SaveName']);
-            Trace($Path, 'Local Copy');
-//            $this->Render();
-//            return;
-            $this->Form->SetFormValue('Path', $Path);
+            $AnalyzedAddon['File'] = $Parsed['SaveName'];
+            unset($AnalyzedAddon['Path']);
+            $AnalyzedAddon['Description2'] = $this->Form->GetFormValue('Description2');
+            Trace($AnalyzedAddon, 'Analyzed Addon');
+            
+            $this->Form->FormValues($AnalyzedAddon);
          } catch (Exception $ex) {
             $this->Form->AddError($ex);
+         }
+         
+         if (isset($TargetPath) && file_exists($TargetPath)) {
+            unlink($TargetPath);
          }
 
          // If there were no errors, save the addon
@@ -430,10 +452,9 @@ class AddonController extends AddonsController {
          if ($this->Form->ErrorCount() == 0) {
             $NewVersionID = $this->Form->Save($V1);
             if ($NewVersionID) {
-//               $this->StatusMessage = T("New version saved successfully.");
-//               $this->RedirectUrl =
                $this->SetData('Addon', $AnalyzedAddon);
                $this->SetData('Url', Url('/addon/'.AddonModel::Slug($Addon, TRUE), TRUE));
+               $this->RedirectUrl = $this->Data('Url');
             } else {
                if (file_exists($Path))
                   unlink($Path);
