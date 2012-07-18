@@ -624,7 +624,7 @@ class AddonController extends AddonsController {
          $Title = 'Browse Addons';
       $this->SetData('Title', $Title);
       
-		$Search = GetIncomingValue('Form/Keywords', '');
+		$Search = GetIncomingValue('Keywords', '');
 		$this->_BuildBrowseWheres($Search);
 				
 		$SortField = $Sort == 'recent' ? 'DateUpdated' : 'CountDownloads';

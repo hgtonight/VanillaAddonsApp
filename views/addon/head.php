@@ -5,7 +5,7 @@ if (!property_exists($this, 'HideSearch')) {
 <div class="SearchForm">
 	<?php
 	$Url = '/addon/browse/'.$this->Filter.'/';
-	$Query = GetIncomingValue('Form/Keywords', '');
+	$Query = GetIncomingValue('Keywords', '');
 	echo $this->Form->Open(array('action' => Url($Url.$this->Sort.'/'.$this->Version)));
 	echo $this->Form->Errors();
 	echo $this->Form->TextBox('Keywords', array('value' => $Query));
@@ -13,7 +13,7 @@ if (!property_exists($this, 'HideSearch')) {
    
    $Query = urlencode($Query);
 	if ($Query != '')
-		$Query = '?Form/Keywords='.$Query;
+		$Query = '?Keywords='.$Query;
 	?>
 	<div class="Options">
 		<strong>↳</strong>
