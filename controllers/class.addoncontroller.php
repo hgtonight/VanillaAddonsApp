@@ -107,7 +107,7 @@ class AddonController extends AddonsController {
 
       $this->Form->SetModel($this->AddonModel);
 
-      if ($this->Form->AuthenticatedPostBack()) {
+      if ($this->Form->IsPostBack()) {
          $Upload = new Gdn_Upload();
          $Upload->AllowFileExtension(NULL);
          $Upload->AllowFileExtension('zip');
@@ -167,9 +167,12 @@ class AddonController extends AddonsController {
             $AddonID = $this->Form->Save();
             if ($AddonID !== FALSE) {
                $Addon = $this->AddonModel->GetID($AddonID);
-
-               // Redirect to the new addon
-               Redirect("addon/".AddonModel::Slug($Addon, FALSE));
+               $this->SetData('Addon', $Addon);
+               
+               if ($this->DeliveryType == DELIVERY_TYPE_ALL) {
+                  // Redirect to the new addon.
+                  Redirect("addon/".AddonModel::Slug($Addon, FALSE));
+               }
             }
          } else {
             if (isset($TargetFile) && file_exists($TargetFile))
@@ -377,17 +380,17 @@ class AddonController extends AddonsController {
 		$Session = Gdn::Session();
       $Addon = $this->AddonModel->GetID($AddonID);
       if (!$Addon)
-         Redirect('dashboard/home/filenotfound');
+         throw NotFoundException('Addon');
          
       if ($Addon['InsertUserID'] != $Session->UserID)
-         $this->Permission('Addons.Addon.Manage');
+         $this->Permission('Garden.Settings.Manage');
 
       $this->AddModule('AddonHelpModule');
       
       $this->Form->SetModel($this->AddonModel);
       $this->Form->AddHidden('AddonID', $AddonID);
       
-      if ($this->Form->AuthenticatedPostBack()) {
+      if ($this->Form->IsPostBack()) {
          $Upload = new Gdn_Upload();
          $Upload->AllowFileExtension(NULL);
          $Upload->AllowFileExtension('zip');
@@ -454,7 +457,8 @@ class AddonController extends AddonsController {
             if ($NewVersionID) {
                $this->SetData('Addon', $AnalyzedAddon);
                $this->SetData('Url', Url('/addon/'.AddonModel::Slug($Addon, TRUE), TRUE));
-               $this->RedirectUrl = $this->Data('Url');
+               if ($this->DeliveryType() == DELIVERY_TYPE_ALL)
+                  $this->RedirectUrl = $this->Data('Url');
             } else {
                if (file_exists($Path))
                   unlink($Path);
