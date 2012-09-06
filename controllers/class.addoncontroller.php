@@ -489,6 +489,41 @@ class AddonController extends AddonsController {
       
       Redirect('/addon/'.AddonModel::Slug($Addon));
   }
+  
+   protected static function NotFoundString($Code, $Item) {
+      return sprintf(T('%1$s "%2$s" not found.'), T($Code), $Item);
+   }
+  
+   public function ChangeOwner($AddonID) {
+      $this->Permission('Garden.Settings.Manage');
+      $Addon = $this->AddonModel->GetSlug($AddonID);
+      
+      if (!$Addon)
+         throw NotFoundException('Addon');
+         
+      if ($this->Form->IsPostBack()) {
+         $this->Form->ValidateRule('User', 'ValidateRequired');
+         
+         if ($this->Form->ErrorCount() == 0) {
+            $NewUser = $this->Form->GetFormValue('User');
+            if (is_numeric($NewUser))
+               $User = Gdn::UserModel()->GetID($NewUser, DATASET_TYPE_ARRAY);
+            else
+               $User = Gdn::UserModel()->GetByUsername($NewUser);
+         
+            if (!$User)
+               $this->Form->AddError('@'.self::NotFoundString('User', $NewUser));
+         }
+         
+         if ($this->Form->ErrorCount() == 0) {
+            $this->AddonModel->SetField($Addon['AddonID'], 'InsertUserID', GetValue('UserID', $User));
+         }
+      } else {
+         $this->Form->AddError('You must POST to this page.');
+      }
+      
+      $this->Render();
+   }
 
    public function Delete($AddonID = '') {
       $this->Permission('Addons.Addon.Manage');
@@ -800,7 +835,7 @@ class AddonController extends AddonsController {
       $this->AddModule('AddonHelpModule', 'Panel');
       $this->Form->SetModel($this->AddonModel);
       $this->Form->AddHidden('AddonID', $AddonID);
-      if ($this->Form->AuthenticatedPostBack() === TRUE) {
+      if ($this->Form->IsPostBack()) {
          $UploadImage = new Gdn_UploadImage();
          try {
             // Validate the upload

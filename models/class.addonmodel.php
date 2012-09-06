@@ -324,24 +324,26 @@ class AddonModel extends Gdn_Model {
          $this->SetCalculatedFields($Data->Result());
       } elseif (is_object($Data) || !isset($Data[0])) {
          $File = GetValue('File', $Data);
-         SetValue('Url', $Data, Url("/uploads/$File", TRUE));
-         $Icon = GetValue('Icon', $Data, '');
-         if ($Icon) {
-            SetValue('IconUrl', $Data, Gdn_Upload::Url($Icon));
-         } else {
-            SetValue('IconUrl', $Data, '');
+         SetValue('Url', $Data, Gdn_Upload::Url($File));
+         
+         $Icon = GetValue('Icon', $Data, NULL);
+         if ($Icon !== NULL) {
+            // Fix the icon path.
+            if ($Icon && strpos($Icon, '/') == FALSE) {
+               $Icon = 'ai'.$Icon;
+               SetValue('Icon', $Data, $Icon);
+            }
+
+            if (empty($Icon)) {
+               SetValue('IconUrl', $Data, 'foo');
+            } else {
+               SetValue('IconUrl', $Data, Gdn_Upload::Url($Icon));
+            }
          }
 
          if (GetValue('AddonKey', $Data) && GetValue('Checked', $Data)) {
             $Slug = strtolower(GetValue('AddonKey', $Data).'-'.GetValue('Type', $Data).'-'.GetValue('Version', $Data));
             SetValue('Slug', $Data, $Slug);
-         }
-
-         // Fix the icon path.
-         $Icon = GetValue('Icon', $Data);
-         if ($Icon && strpos($Icon, '/') == FALSE) {
-            $Icon = 'ai'.$Icon;
-            SetValue('Icon', $Data, $Icon);
          }
 
          // Set the requirements.
