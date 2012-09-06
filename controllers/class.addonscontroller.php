@@ -15,6 +15,7 @@ class AddonsController extends Gdn_Controller {
    }
    
    public function Initialize() {
+      parent::Initialize();
       if ($this->DeliveryType() == DELIVERY_TYPE_ALL) {
          $this->Head = new HeadModule($this);
 //         $this->Head->AddTag('meta', array(
@@ -25,6 +26,7 @@ class AddonsController extends Gdn_Controller {
          
       $this->AddCssFile('style.css');
       $this->AddCssFile('addons.css');
-      parent::Initialize();
+      
+      $this->CountCommentsPerPage = C('Vanilla.Comments.PerPage', 30);
    }
 }
