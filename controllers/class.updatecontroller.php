@@ -24,7 +24,7 @@ class UpdateController extends AddonsController {
       $CountConversationMessages = GetIncomingValue('messages', '');
       $CountDiscussions = GetIncomingValue('discussions', '');
       $CountComments = GetIncomingValue('comments', '');
-      $UpdateChecks = Gdn_Format::Unserialize($this->_GetJsonString('updateChecks'));
+      $UpdateChecks = json_decode($this->_GetJsonString('updateChecks'), true);
       $UpdateCheckID = 0;
       
       // Get the UpdateCheckSourceID
@@ -133,7 +133,7 @@ class UpdateController extends AddonsController {
       // Send messages back to the requesting application
       exit(json_encode(array(
          'messages' => '', // <-- These messages must be an array of GDN_Message table rows in associative array format.
-         'response' => Gdn_Format::Serialize($Response)
+         'response' => json_encode($Response)
       )));
       /*
        You can also send back messages to be injected into the remote application's pages. They should be in the following format:
