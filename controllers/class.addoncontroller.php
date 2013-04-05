@@ -476,15 +476,24 @@ class AddonController extends AddonsController {
       $this->Render();
    }
    
-   public function Approve($AddonID = '') {
+   public function Approve($AddonID = '', $AddonVersionID = '') {
       $this->Permission('Addons.Addon.Manage');
       $Session = Gdn::Session();
-      $Addon = $this->Addon = $this->AddonModel->GetID($AddonID);
-      $VersionModel = new Gdn_Model('AddonVersion');
-      if (!$Addon['DateReviewed']) {
-         $VersionModel->Save(array('AddonVersionID' => $Addon['AddonVersionID'], 'DateReviewed' => Gdn_Format::ToDateTime()));
+      
+      if ($AddonVersionID) {
+         $AddonID = $this->AddonModel->SQL->GetWhere('AddonVersion', array('AddonVersionID' => $AddonVersionID))->Value('AddonID');
+         $Addon = $this->Addon = $this->AddonModel->GetID($AddonID);
       } else {
-         $VersionModel->Update(array('DateReviewed' => null), array('AddonVersionID' => $Addon['AddonVersionID']));
+         $Addon = $this->Addon = $this->AddonModel->GetID($AddonID);
+         $AddonVersionID = $Addon['AddonVersionID'];
+      }
+      $VersionModel = new Gdn_Model('AddonVersion');
+      $AddonVersion = $VersionModel->GetID($AddonVersionID, DATASET_TYPE_ARRAY);
+      
+      if (!$AddonVersion['DateReviewed']) {
+         $VersionModel->Save(array('AddonVersionID' => $AddonVersionID, 'DateReviewed' => Gdn_Format::ToDateTime()));
+      } else {
+         $VersionModel->Update(array('DateReviewed' => null), array('AddonVersionID' => $AddonVersionID));
       }
       
       Redirect('/addon/'.AddonModel::Slug($Addon));

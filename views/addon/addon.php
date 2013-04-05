@@ -25,6 +25,7 @@ if ($this->DeliveryType() == DELIVERY_TYPE_ALL) {
 	</h1>
 	<?php
    $AddonID = $this->Data('AddonID');
+   $AddonVersionID = $this->Data('AddonVersionID');
    $Ver = ($this->Data('Checked') ? '' : 'v1');
    $Ver2 = ($this->Data('Checked') || $this->Data('Vanilla2') ? '' : 'v1');
 	if ($Session->UserID == $this->Data('InsertUserID') || $Session->CheckPermission('Addons.Addon.Manage')) {
@@ -36,7 +37,7 @@ if ($this->DeliveryType() == DELIVERY_TYPE_ALL) {
       if ($Session->CheckPermission('Addons.Addon.Manage'))
          echo '|'.Anchor('Check', '/addon/check/'.$AddonID);
 		if ($Session->CheckPermission('Addons.Addon.Manage'))
-			echo '|'.Anchor($this->Data('DateReviewed') == '' ? 'Approve Version' : 'Unapprove Version', '/addon/approve/'.$AddonID, 'ApproveAddon');
+			echo '|'.Anchor($this->Data('DateReviewed') == '' ? 'Approve Version' : 'Unapprove Version', '/addon/approve?addonversionid='.$AddonVersionID, 'ApproveAddon');
 		if ($Session->CheckPermission('Addons.Addon.Manage'))
          echo '|'.Anchor('Delete Addon', '/addon/delete/'.$AddonID.'?Target=/addon', 'DeleteAddon');
 
