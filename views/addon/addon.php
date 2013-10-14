@@ -76,6 +76,8 @@ if ($this->DeliveryType() == DELIVERY_TYPE_ALL) {
                <?php
                if ($this->Data('FileSize'))
                   echo '<dt>File Size</dt><dd>'.'<meta itemprop="fileSize" content="'.$this->Data('FileSize').'"/>'.Gdn_Upload::FormatFileSize($this->Data('FileSize')).'</dd>';
+               if ($this->Data('License'))
+                  echo '<dt>License</dt><dd>'.'<meta itemprop="license" content="'.$this->Data('License').'"/>'.Gdn_Format::Display($this->Data('License')).'</dd>';
                if (Gdn::Session()->CheckPermission('Addons.Addon.Manage')) {
                   echo '<dt>Checked</dt><dd>'.($this->Data('Checked') ? 'Yes' : 'No').'</dd>';
                }
